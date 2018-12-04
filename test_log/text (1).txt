@@ -1,0 +1,16 @@
+[BEGIN] 2018/12/2 15:27:52
+[root@centos7evcloud ~]# python36  test_token2.py
+Sun Dec  2 15:27:56 2018
+共计上传 2000000 次 成功次数 1 上传成功时间 Sun Dec  2 15:27:57 2018
+共计上传 2000100 次 成功次数 101 上传成功时间 Sun Dec  2 15:28:20 2018
+共计上传 2000200 次 成功次数 201 上传成功时间 Sun Dec  2 15:28:42 2018
+共计上传 2000300 次 成功次数 301 上传成功时间 Sun Dec  2 15:29:04 2018
+共计上传 2000400 次 成功次数 401 上传成功时间 Sun Dec  2 15:29:27 2018
+共计上传 2000500 次 成功次数 501 上传成功时间 Sun Dec  2 15:29:50 2018
+共计上传 2000600 次 成功次数 601 上传成功时间 Sun Dec  2 15:30:15 2018
+Traceback (most recent call last):
+  File "test_token2.py", line 23, in <module>
+    if new1['bucket_name']=='test':
+KeyError: 'bucket_name'
+
+[END] 2018/12/2 15:35:01

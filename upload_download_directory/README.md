@@ -4,7 +4,7 @@
 
 ## upload directory to evharbor parallel
 
-01_directory_upload_parallel.py /local/directory/src /bucket/objfolder1/objfolder2/dst
+运行示例：01_directory_upload_parallel.py /local/directory/src /bucket/objfolder1/objfolder2/dst
 
 通过evharbor的API，并发上传一个目录到对象存储中.程序执行过程如下：
 

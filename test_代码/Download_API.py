@@ -8,7 +8,7 @@ web="http://159.226.227.2"
 test_API="/api/v1/auth-token/"
 Download="/api/v1/obj/sss/700000/"
 #获取token
-post_text=requests.post(urljoin(web,test_API),data={'version':'v1','username':'mazhenwei@cnic.cn','password':'mazhenwei'})
+post_text=requests.post(urljoin(web,test_API),data={'version':'v1','username':'','password':''})
 text=json.loads(post_text.text)
 token1=text['token']
 

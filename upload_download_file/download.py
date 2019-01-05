@@ -26,8 +26,8 @@ def download(Download,token,path):
 
 def main():
     #请输入用户名，密码
-    username = 'mazhenwei@cnic.cn'
-    password = 'mazhenwei'
+    username = ''
+    password = ''
     Download="/api/v1/obj/"+ "sss/10000000/"    #路径＋文件名/
     path=''     #下载文件保存的路径
  

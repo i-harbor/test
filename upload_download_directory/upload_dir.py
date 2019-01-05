@@ -6,7 +6,7 @@ import requests
 ##API地址
 web="http://obs.casearth.cn"
 test_API="/api/v1/auth-token/"
-bucket='5'               #桶的名字
+bucket='string1'               #桶的名字
 path='e:/test'                 #需要上传的目录的路径           
 chunk_size=1024*1024    #文件分块大小（1M）
 chunk_offset=0          #偏移量
@@ -73,8 +73,8 @@ def search(path,token):
             pass
 def main():
     #请输入用户名，密码
-    username = 'mazhenwei@cnic.cn'
-    password = 'mazhenwei'
+    username = ''
+    password = ''
     
     token = get_token(username, password)
 #    create_bucket('444',token)##创建桶的名字

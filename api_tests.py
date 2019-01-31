@@ -1,35 +1,24 @@
 import threading
 import  requests
 import os
+import argparse
+import logging
+from datetime import datetime
 from urllib.parse import urljoin, quote, urlencode
 
 
-EVHARBOR_AUTH_TOKEN = 'a99a6067059b5ff508c84d9694daa68f61f9af7c'
-EVHARBOR_STORAGE_BUCKET_NAME = 'test'
+log_filename = 'evharbor.log' # f'evharbor_{datetime.now().strftime("%Y-%m-%d %H-%M-%S")}.log'
+logging.basicConfig(level=logging.WARNING, filename=log_filename, filemode='a')  # 'a'为追加模式,'w'为覆盖写
+logger = logging.getLogger('log')
+
 # EVHARBOR_DOMAIN = 'obs.casearth.cn'
 EVHARBOR_DOMAIN = '10.0.86.213:8000'
 EVHARBOR_URL = 'http://%s' % EVHARBOR_DOMAIN
 
-# 文件上传存储桶下的基目录
-BASE_UPLOAD_DIR_NAME = '66/88'
-# 文件下载保存位置，当前路径相对目录路径
-BASE_DOWNLOAD_DIR_NAME = os.path.join('test_data', 'download')
-# 要上传的文件所在的位置，当前路径相对目录路径
-BASE_DOWNLOAD_FILES_DIR_NAME = os.path.join('test_data', 'upload')
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# 文件下载保存路径
-BASE_DOWNLOAD_DIR = os.path.join(BASE_DIR, BASE_DOWNLOAD_DIR_NAME)
-
-# 要上传的文件所在的路径
-BASE_UPLOAD_FILES_DIR = os.path.join(BASE_DIR, BASE_DOWNLOAD_FILES_DIR_NAME)
-
-# 文件上传基url
-BASE_UPLOAD_URL = urljoin(EVHARBOR_URL, '/'.join(
-    [item for item in ['api/v1/obj', EVHARBOR_STORAGE_BUCKET_NAME, BASE_UPLOAD_DIR_NAME] if item])) + '/'
-
 API_V1_DIR_BASE_URL = urljoin(EVHARBOR_URL, 'api/v1/dir/')
 API_V1_OBJ_BASE_URL = urljoin(EVHARBOR_URL, 'api/v1/obj/')
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 class ObjUpload(threading.Thread):
@@ -62,7 +51,9 @@ class ObjUpload(threading.Thread):
                 i = 0
                 while True:
                     if i > 10:
-                        print(f'{self._filename},upload failed')
+                        t = f'[{self._filename}],upload failed'
+                        logger.warning(t)
+                        print(t)
                         return
                     try:
                         ok = self.upload_one_chunk(offset, chunk)
@@ -77,7 +68,7 @@ class ObjUpload(threading.Thread):
 
                 offset += len(chunk)
 
-            print(f'{self._filename},upload successfull')
+            print(f'[{self._filename}],upload successfull')
 
     def upload_one_chunk(self, offset, chunk):
         '''
@@ -181,7 +172,7 @@ class ObjDownload(threading.Thread):
 
                 offset += len(chunk)
                 if offset >= obj_size: # 下载完成
-                    print(f'{self._obj_url},download ok')
+                    print(f'[{self._obj_url}],download ok')
                     break
 
     def download_one_chunk(self, offset, size):
@@ -281,7 +272,7 @@ class Directory():
         if not isinstance(objs_and_subdirs, list):
             return None
 
-        return [(o.get('na'), '/'.join([path, o.get('na')]).lstrip('/')) for o in objs_and_subdirs if o.get('fod')]
+        return [(o.get('name'), '/'.join([path, o.get('name')]).lstrip('/')) for o in objs_and_subdirs if o.get('fod')]
 
     def get_objs_and_subdirs(self, bucket_name=None, dir_path='', params={}):
         '''
@@ -329,9 +320,18 @@ class Directory():
             success: True
             failure: False
         '''
+        if dir_path == '':
+            return True
+
         bucket_name = bucket_name or self._bucket_name
 
         dirs = self.get_path_breadcrumb(dir_path, base_dir=base_dir)
+        # 先尝试创建路径最后一个目录，可能路径的前大半段已存在。如果成功不用从头尝试创建整个路径
+        dir_name, p_dir_path = dirs[-1]
+        if self.create(bucket_name=bucket_name, dir_path=p_dir_path, dir_name=dir_name):
+            return True
+
+        # 尝试从头创建整个路径
         for dir_name, p_dir_path in dirs:
             if not self.create(bucket_name=bucket_name, dir_path=p_dir_path, dir_name=dir_name):
                 # 再次尝试
@@ -360,11 +360,11 @@ class Directory():
         return breadcrumb
 
 
-def workers_generator(workers, num_per=10):
+def generator_wrapper(workers, num_per=10):
     '''
     包装生成器，每次从workers中取出num_per个元素
 
-    :param workers: 生成器的源数据
+    :param workers: 生成器的源数据,需可被切片
     :param num_per: 每次返回的元素数量
     :return: workers的切片
     '''
@@ -434,7 +434,7 @@ def test_upload():
         raise Exception('创建存储桶内上传基目录路径失败')
 
     files = get_upload_files()
-    for fs in workers_generator(files, num_per=20):
+    for fs in generator_wrapper(files, num_per=20):
         workers = []
         for filename in fs:
             worker = make_upload_worker(filename)
@@ -446,7 +446,7 @@ def test_upload():
 
 def test_download(dir_path=''):
     '''
-    下载存储桶根目录下的文件对象, 未做翻页下载
+    下载存储桶给定目录下的文件对象, 未做翻页下载
     '''
     direc = Directory()
     r = direc.get_objs_and_subdirs(dir_path=dir_path)
@@ -457,17 +457,135 @@ def test_download(dir_path=''):
     obj_paths = direc.get_objs_path_list(r)
     workers = [make_download_worker(obj_path_name) for _, obj_path_name in obj_paths]
 
-    for works in workers_generator(workers):
+    for works in generator_wrapper(workers):
         for worker in works:
             worker.start()
 
         for worker in works:
             worker.join()
 
-if __name__ == '__main__':
+def get_args():
+    parser = argparse.ArgumentParser(usage='''
+    python api_tests.py -a upload -t a99a6067059b5ff508c84d9694daa6861f9af7c -b gggg -d uptest -p E:/work/test/test_data/download
+    python api_tests.py --action=download --token=a99a6067059b5ff508c84d9694daa68f6f9af7c --bucket=gggg --dest=uptest --path=E:/work/test/test_data/download
+    ''')
+    parser.add_argument('-a', '--action',  # 参数名称, 选择上传或下载操作
+        dest='action',              # 要添加到返回的对象的属性的名称
+        nargs=1,                    # 当命令行有此参数时取值const, 否则取值default
+        type=str,                   # 应转换命令行参数的类型。
+        required=True,              # 参数选项必须
+        choices=['upload', 'download'], # 参数允许值的容器
+        help='Select upload or download to do',
+        metavar='upload or download')    # 帮助信息中参数的示例值
 
-    # test_upload()
-    test_download(dir_path=BASE_UPLOAD_DIR_NAME)
+    parser.add_argument('-b', '--bucket', # 参数名称
+        dest='bucket_name',# dest - 要添加到返回的对象的属性的名称
+        nargs=1,            # 参数值个数
+        type=str,
+        required=True,      # 参数选项必须
+        help='bucket name', # help - 对参数的作用的简要说明。
+        metavar='xxx'   # metavar - 帮助信息中参数的示例值
+    )
+    parser.add_argument('-t', '--token', # 参数名称
+        dest='token',# 要添加到返回的对象的属性的名称
+        nargs=1, # 参数值个数
+        type=str,
+        required=True,# 参数选项必须
+        help='Auth token', # 对参数的作用的简要说明。
+        metavar='xxx'    # 帮助信息中参数的示例值
+    )
+    parser.add_argument('-d', '--dest', #
+        dest='dest',# 要添加到返回的对象的属性的名称
+        nargs='?', # 输入了此参数未赋值时取值const, 未输入了此参数否则取值default
+        const='',
+        default='',
+        type=str,
+        required=False,# 参数选项不必须
+        help='存储桶下的目录名，上传时表示文件上传到此目录下，下载时表示要下载此目录下文件，默认为存储桶下根目录',
+        metavar='xx'   # 帮助信息中参数的示例值
+    )
+    parser.add_argument('-p', '--path',
+        dest='path',# 要添加到返回的对象的属性的名称
+        nargs='?', # 输入了此参数未赋值时取值const, 未输入了此参数否则取值default
+        const='',
+        default='',
+        type=str,
+        required=False,# 参数选项不必须
+        help='本地路径，上传时表示要被上传的目录路径，下载时表示下载的文件要保存到此路径下，默认为当前路径',
+        metavar='/home/test'    # 帮助信息中参数的示例值
+    )
+    args = parser.parse_args()
+    return args
+
+def pre_work():
+    '''
+    工作前的一些初始化工作
+    :return:
+        success: args, type:dict
+        failed: None
+    '''
+    global EVHARBOR_STORAGE_BUCKET_NAME
+    global EVHARBOR_AUTH_TOKEN
+    global BASE_UPLOAD_DIR_NAME # 文件上传存储桶下的基目录
+    global BASE_DOWNLOAD_DIR # 文件下载保存路径
+    global BASE_UPLOAD_FILES_DIR # 要上传的文件所在的路径
+    global BASE_UPLOAD_URL # 文件上传基url
+
+    args = get_args()
+
+    # bucket
+    EVHARBOR_STORAGE_BUCKET_NAME = args.bucket_name[0]
+    if not EVHARBOR_STORAGE_BUCKET_NAME:
+        print('bucket name invalied')
+        return None
+
+    EVHARBOR_AUTH_TOKEN = args.token[0] # token
+    BASE_UPLOAD_DIR_NAME = args.dest # bucket下目标的目录路径
+
+    path = args.path
+    if not path:
+        BASE_DOWNLOAD_DIR = os.path.join(BASE_DIR, 'download') # 默认 保存下载文件的目录
+        BASE_UPLOAD_FILES_DIR = BASE_DIR # 默认要被上传的路径
+    else:
+        if not os.path.exists(path):
+            print(f'path "{path}" is not exists.')
+            return None
+
+        BASE_UPLOAD_FILES_DIR = BASE_DOWNLOAD_DIR = path # 要上传的目录 或 要保存下载文件的目录
+
+    BASE_UPLOAD_URL = urljoin(EVHARBOR_URL, '/'.join(
+        [item for item in ['api/v1/obj', EVHARBOR_STORAGE_BUCKET_NAME, BASE_UPLOAD_DIR_NAME] if item])) + '/'
+
+    args.action = args.action[0]
+    print_env_config(action=args.action)
+    return args
+
+def print_env_config(action):
+    print(f'action: {action}')
+    print(f'bucket name: {EVHARBOR_STORAGE_BUCKET_NAME}')
+    print(f'token: {EVHARBOR_AUTH_TOKEN}')
+    print(f"dest bucket's dir: {BASE_UPLOAD_DIR_NAME}")
+    if action == 'upload':
+        print(f'will be uploaded dir: {BASE_UPLOAD_FILES_DIR}')
+    else:
+        print(f'download save to: {BASE_DOWNLOAD_DIR}')
+
+
+if __name__ == '__main__':
+    args = pre_work()
+    if not args:
+        print('have some errors abort work.')
+        os._exit(0)
+
+    if args.action == 'upload':
+        print('upload will be start')
+        test_upload()
+        print('upload done')
+    else:
+        print('download will be start')
+        test_download(dir_path=BASE_UPLOAD_DIR_NAME)
+        print('download done')
+
 
 
 

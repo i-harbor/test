@@ -4,21 +4,21 @@ import os
 import requests
 import sqlite3
 import threading
+import sys ,getopt
 Id=0
 
 ##API地址
 web="http://obs.casearth.cn"
 test_API="/api/v1/auth-token/"
-bucket='3'               #桶的名字
-path=r'E:\BaiduNetdiskDownload\C++从入门到精通（源码文件和视频文件'                 #需要上传的目录的路径           
-path_base=os.path.basename(path)
-del_len=len(path)-len(path_base)#删除目录的路径
+##bucket=''               #桶的名字
+##path=r''                 #需要上传的目录的路径           
+
 chunk_size=1024*1024    #文件分块大小（1M）
 chunk_offset=0          #偏移量
 
 #请输入用户名，密码
-username = 'mazhenwei@cnic.cn'
-password = 'mazhenwei' 
+##username = ''
+##password = '' 
 ##获取token
 def get_token(username, password):
     post_text=requests.post(urljoin(web,test_API),data={'version':'v1','username':username,'password':password})
@@ -132,10 +132,42 @@ def read_sql(i,bucket,chunk_size, chunk_offset,token):
  
     cursor.close()
     conn.close()
+
+def GetOpt(argv):
+    try:
+      
+        opts,args=getopt.getopt(argv,"s:d:k:h",["src=","dst=","token=","help"])
+        for opt,value in opts:
+            if opt in ("-s" , "--src"):
+                global path;
+                path = value;
+            if opt in ("-d" , "--dst"):
+                global bucket;
+                bucket = value;
+            if opt in ("-k" , "--token"):
+                global token;
+                token = value;
+            if opt in ("-h" , "--help"):
+                usage();
+                sys.exit(-1)
+    except getopt.GetoptError as e:
+        print (e.msg)
+        sys.exit(-1)
+
+def usage():
+    print ('''    程序使用说明如下：
+    00_single_big_parallel.py [option][value]...
+    Example: ./00_single_big_parallel.py -s "/root/1.file" -d "/bucket_name/objstorepath/1.file" -k "xxxxxxxx"
+    -h or --help
+    -s or --src="文件源路径"，
+    -d or --dst="桶名称",
+    -k or --token="认证token"
+    ''')
+
+
 def main():
 
 
-    token = get_token(username, password)
 #    create_bucket('444',token)##创建桶的名字
     create_Dir(path,token)
 #搜索目录创建，文件存入数据库。
@@ -150,11 +182,14 @@ def main():
 if __name__ == '__main__':
 
 ##    semaphore=threading.Semaphore(5)#多线程上传锁
-    
+    GetOpt(sys.argv[1:])
+    global path_base
+    path_base=os.path.basename(path)
+    del_len=len(path)-len(path_base)#删除目录的路径
     main()
 
     
-    token = get_token(username, password)
+##    token = get_token(username, password)
     
 #创建5个线程
 

@@ -1,16 +1,16 @@
 #				参考文档
-##1.master ip：10.XX.XX.87
+## 1.master ip：10.XX.XX.87
 ##	client ip:10.XX.XX.225-239
 
 
-##2.分别通过master对client进行免密登陆
+## 2.分别通过master对client进行免密登陆
 ###       	 具体步骤如下：
 ###        	1）在master执行 ssh-keygen -t rsa 命令，生成密钥文件
 ###	2）master执行ssh-copy-id -i ~/.ssh/id_rsa.pub dss@10.XX.XX.225-239（分别执行，将公钥文件传输到client）
 ###	3）执行生效查看.ssh文件是否有新的公钥生成
 
 
-##3.创建文件的同步系统
+## 3.创建文件的同步系统
 ###	1）将master的文件自动化上传到client上
 ###	2）设置client主机列表（/updata）
 ###	3）执行自动化脚本（remmotecopy.sh），此脚本参数  client IP列表    本地文件目录     client存储目录
@@ -18,7 +18,7 @@
 ###	4）脚本执行完后自动关闭，确认同步成功	
 
 
-##4.创建并行执行linux系统命令系统
+## 4.创建并行执行linux系统命令系统
 ###	1）master控制client并行执行master所要执行的命令行
 ###	2）设置client主机列表（/updata）
 ###	3）执行自动化脚本（doCommand.sh）此脚本参数为要执行的命令要用‘ ’引用住

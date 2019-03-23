@@ -1,7 +1,10 @@
 #				参考文档
+
+
 ## 1.主机设置
 	master ip：10.XX.XX.87
 	client ip:10.XX.XX.225-239
+
 
 
 ## 2.分别通过master对client进行免密登陆
@@ -11,13 +14,51 @@
 	3）执行生效查看.ssh文件是否有新的公钥生成
 
 
+
 ## 3.创建文件的同步系统
 	1）将master的文件自动化上传到client上
 	2）设置client主机列表（/updata）
 	3）执行自动化脚本（remmotecopy.sh），此脚本参数  client IP列表    本地文件目录     client存储目录
 		eg：sh remotecopy.sh -f /updata/hosts /root/API_upload1.py /root/API_upload2.py
 	4）脚本执行完后自动关闭，确认同步成功	
-	'''
+```
+#!/bin/bash
+while getopts f: OPT;
+do
+	case $OPT in
+		f|+f)
+			files="$OPTARG $files"
+			;;
+		*)
+			echo "usage: `basename $0` [-f hostfile] <from> <to>"
+			exit 2
+	esac
+done
+shift `expr $OPTIND - 1`
+ 
+if [ "" = "$files" ];
+then
+	echo "usage: `basename $0` [-f hostfile] <from> <to>"
+	exit
+fi
+ 
+for file in $files
+do
+	if [ ! -f "$file" ];
+	then
+		echo "no hostlist file:$file"
+		exit
+fi
+hosts="$hosts `cat $file`"
+done
+ 
+for host in $hosts;
+do
+	echo "do $host"
+	scp $1 root@$host:$2
+done
+```
+
 
 ## 4.创建并行执行linux系统命令系统
 	1）master控制client并行执行master所要执行的命令行
@@ -26,7 +67,7 @@
 		eg： sh doCommand.sh 'python36 API_upload2.py >/dev/null 2>&1 &'
 		（并行计算需要在命令后加 /dev/null 2>&1 &,目的在于将返回的参数放入linux临时存储的空间以达到并行执行命令的目的，大大减少执行时间）
 ```
- #!/bin/sh
+#!/bin/sh
 
 doCommand()
 {

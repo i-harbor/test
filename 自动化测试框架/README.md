@@ -8,7 +8,7 @@
 
 
 ## 2.分别通过master对client进行免密登陆
-具体步骤如下：
+###具体步骤如下：
        	1）在master执行 ssh-keygen -t rsa 命令，生成密钥文件
 	2）master执行ssh-copy-id -i ~/.ssh/id_rsa.pub dss@10.XX.XX.225-239（分别执行，将公钥文件传输到client）
 	3）执行生效查看.ssh文件是否有新的公钥生成

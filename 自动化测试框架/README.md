@@ -1,6 +1,6 @@
 #				参考文档
 ## 1.master ip：10.XX.XX.87
-##	client ip:10.XX.XX.225-239
+	client ip:10.XX.XX.225-239
 
 
 ## 2.分别通过master对client进行免密登陆

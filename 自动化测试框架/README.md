@@ -25,7 +25,8 @@
 	3）执行自动化脚本（doCommand.sh）此脚本参数为要执行的命令要用‘ ’引用住
 		eg： sh doCommand.sh 'python36 API_upload2.py >/dev/null 2>&1 &'
 		（并行计算需要在命令后加 /dev/null 2>&1 &,目的在于将返回的参数放入linux临时存储的空间以达到并行执行命令的目的，大大减少执行时间）
-'''#!/bin/sh
+'''
+#!/bin/sh
 
 doCommand()
 {

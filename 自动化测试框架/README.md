@@ -1,5 +1,5 @@
 #				参考文档
-## 主机设置
+## 1.主机设置
 	master ip：10.XX.XX.87
 	client ip:10.XX.XX.225-239
 
@@ -17,7 +17,7 @@
 	3）执行自动化脚本（remmotecopy.sh），此脚本参数  client IP列表    本地文件目录     client存储目录
 		eg：sh remotecopy.sh -f /updata/hosts /root/API_upload1.py /root/API_upload2.py
 	4）脚本执行完后自动关闭，确认同步成功	
-
+	'''
 
 ## 4.创建并行执行linux系统命令系统
 	1）master控制client并行执行master所要执行的命令行
@@ -25,7 +25,29 @@
 	3）执行自动化脚本（doCommand.sh）此脚本参数为要执行的命令要用‘ ’引用住
 		eg： sh doCommand.sh 'python36 API_upload2.py >/dev/null 2>&1 &'
 		（并行计算需要在命令后加 /dev/null 2>&1 &,目的在于将返回的参数放入linux临时存储的空间以达到并行执行命令的目的，大大减少执行时间）
+'''#!/bin/sh
 
+doCommand()
+{
+    hosts=`sed -n '/^[^#]/p' hostlist`
+    for host in $hosts
+        do
+            echo ""
+            echo HOST $host
+            ssh $host "$@"
+        done
+    return 0
+}
+
+    if [ $# -lt 1 ]
+    then
+            echo "$0 cmd"
+            exit
+    fi
+    doCommand "$@"
+    echo "return from doCommand"
+
+'''
 
 
 注：所需文件脚本在本框架文件夹下。

@@ -6,8 +6,8 @@ import pyharbor
 set_global_settings({
     'SCHEME': 'http',   # 或'https', 默认'http'
     'DOMAIN_NAME': 'obs.casearth.cn', # 默认 'obs.casearth.cn'
-    'ACCESS_KEY': '44aba82a40bc11e9a16bc8000a00c8d7',
-    'SECRET_KEY': '5141f096b9280ca3d14d5b76f324dd062d9d8f34',
+    'ACCESS_KEY': '44aba82a40b',
+    'SECRET_KEY': '5141f09',
     })
 def GetOpt(argv):
     try:
@@ -41,13 +41,13 @@ def main():
 ##    time1=time.time()
     filename = src
     client = pyharbor.get_client()
-    ok, offset, msg = client.bucket(dst).dir('').put_object(obj_name=name, filename=filename)
+    ok, offset, msg = client.bucket(dst).dir('').put_object(obj_name=filename, filename=filename)
     if os.path.getsize(filename) == offset:
             
 ##            d="%d" %(time.time()-time1)
             
             
-        print(name+" "+d+'\n')
+        print(filename+" "+'\n')
 
 #ok, offset, msg = client.bucket(dst).dir(src).put_object(obj_name=i, filename=filename)
 ''' 或者

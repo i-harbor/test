@@ -14,7 +14,7 @@ file1.write(str(time1))
 ##循环上传
 for i in range(1,10000001):
     files={'chunk':(open('02f997dc6dbd3354a3478e6109761194.png','rb'))}
-    put_text=requests.put('http://10.0.200.2:8000/api/v1/obj/5bfe3fd3d9d24a711680ecc3/',files=files, data = { "bucket_name": "test", "chunk_offset": 0,"chunk_size": fsize}, headers = {'Authorization':'Token 97d1cff95c36804c740eb781c17f1446b01528f2'})
+    put_text=requests.put('http://10.0.200.2:8000/api/v1/obj/5bfe3fd3d9d24a711680ecc3/',files=files, data = { "bucket_name": "test", "chunk_offset": 0,"chunk_size": fsize}, headers = {'Authorization':'Token '})
     new=put_text.text
     new1=json.loads(new)
     print(new1['bucket_name'],i)
